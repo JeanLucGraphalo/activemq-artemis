@@ -16,22 +16,24 @@
  */
 package org.apache.activemq.artemis.core.remoting;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.handler.ssl.SslHandler;
 import java.io.ByteArrayInputStream;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.handler.ssl.SslHandler;
+import java.util.Optional;
+import java.util.UUID;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnection;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
 public class CertificateUtil {
 
@@ -39,14 +41,28 @@ public class CertificateUtil {
 
    private static final String SSL_HANDLER_NAME = "ssl";
 
-   public static String getCertSubjectDN(RemotingConnection connection) {
-      String certSubjectDN = "unavailable";
-      X509Certificate[] certs = getCertsFromConnection(connection);
-      if (certs != null && certs.length > 0 && certs[0] != null) {
-         certSubjectDN = certs[0].getSubjectDN().getName();
-      }
-      return certSubjectDN;
-   }
+  public static String getCertSubjectDN(RemotingConnection connection) {
+    return Optional.ofNullable(connection)
+        .map(RemotingConnection::getClientID)
+        .map(CertificateUtil::toUUID)
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "[CLIENT-CERT] client ID could not be transformed into UUID"));
+  }
+
+  private static String toUUID(String clientID) {
+    return UUID.nameUUIDFromBytes(clientID.getBytes(StandardCharsets.UTF_8)).toString();
+  }
+
+  //  public static String getCertSubjectDN(RemotingConnection connection) {
+  //    String certSubjectDN = "unavailable";
+  //    X509Certificate[] certs = getCertsFromConnection(connection);
+  //    if (certs != null && certs.length > 0 && certs[0] != null) {
+  //      certSubjectDN = certs[0].getSubjectDN().getName();
+  //    }
+  //    return certSubjectDN;
+  //  }
 
    public static X509Certificate[] getCertsFromConnection(RemotingConnection remotingConnection) {
       X509Certificate[] certificates = null;
