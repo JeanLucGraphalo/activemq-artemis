@@ -56,8 +56,6 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private static final long CLOSE_TIMEOUT_MILLISECONDS = 10000;
-
    private static final int NUM_PRIORITIES = 10;
 
    public static final SimpleString FORCED_DELIVERY_MESSAGE = SimpleString.of("_hornetq.forced.delivery.seq");
@@ -137,6 +135,8 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
    private final ClassLoader contextClassLoader;
    private volatile boolean manualFlowManagement;
 
+   private final int onMessageCloseTimeout;
+
    public ClientConsumerImpl(final ClientSessionInternal session,
                              final ConsumerContext consumerContext,
                              final SimpleString queueName,
@@ -151,7 +151,8 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
                              final Executor flowControlExecutor,
                              final SessionContext sessionContext,
                              final ClientSession.QueueQuery queueInfo,
-                             final ClassLoader contextClassLoader) {
+                             final ClassLoader contextClassLoader,
+                             final int onMessageCloseTimeout) {
       this.consumerContext = consumerContext;
 
       this.queueName = queueName;
@@ -181,6 +182,8 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
       this.contextClassLoader = contextClassLoader;
 
       this.flowControlExecutor = flowControlExecutor;
+
+      this.onMessageCloseTimeout = onMessageCloseTimeout;
 
       if (logger.isTraceEnabled()) {
          logger.trace("{}:: being created at", this, new Exception("trace"));
@@ -648,9 +651,9 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
 
    private File createLargeMessageCache(long messageId) throws IOException {
       File largeMessageCache = File.createTempFile("tmp-large-message-" + messageId + "-", ".tmp");
-      largeMessageCache.setReadable(false);
-      largeMessageCache.setExecutable(false);
-      largeMessageCache.setWritable(false);
+      largeMessageCache.setReadable(false, false);
+      largeMessageCache.setExecutable(false, false);
+      largeMessageCache.setWritable(false, false);
       largeMessageCache.setReadable(true, true);
       largeMessageCache.setWritable(true, true);
       largeMessageCache.deleteOnExit();
@@ -921,10 +924,12 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
 
       sessionExecutor.execute(future);
 
-      boolean ok = future.await(ClientConsumerImpl.CLOSE_TIMEOUT_MILLISECONDS);
-
-      if (!ok) {
-         ActiveMQClientLogger.LOGGER.timeOutWaitingForProcessing();
+      if (onMessageCloseTimeout == -1) {
+         future.await();
+      } else {
+         if (!future.await(onMessageCloseTimeout)) {
+            ActiveMQClientLogger.LOGGER.timeOutWaitingForProcessing(onMessageCloseTimeout);
+         }
       }
    }
 

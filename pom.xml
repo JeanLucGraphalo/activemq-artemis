@@ -20,7 +20,7 @@
    <groupId>org.apache.activemq</groupId>
    <artifactId>artemis-project</artifactId>
    <packaging>pom</packaging>
-   <version>2.39.0-SNAPSHOT</version>
+   <version>2.40.0-SNAPSHOT</version>
 
    <parent>
       <groupId>org.apache</groupId>
@@ -78,9 +78,9 @@
    <url>https://activemq.apache.org/components/artemis/</url>
 
    <properties>
-      <maven.compiler.source>11</maven.compiler.source>
-      <maven.compiler.target>11</maven.compiler.target>
-      <maven.compiler.release>11</maven.compiler.release>
+      <maven.compiler.source>17</maven.compiler.source>
+      <maven.compiler.target>17</maven.compiler.target>
+      <maven.compiler.release>17</maven.compiler.release>
 
       <retryTests>false</retryTests>
       <logging.config>log4j2-tests-config.properties</logging.config>
@@ -88,14 +88,14 @@
 
       <activemq-artemis-native-version>2.0.0</activemq-artemis-native-version>
       <karaf.version>4.4.6</karaf.version>
-      <pax.exam.version>4.13.5</pax.exam.version>
+      <pax.exam.version>4.14.0</pax.exam.version>
       <commons.config.version>2.11.0</commons.config.version>
       <commons.lang.version>3.17.0</commons.lang.version>
       <activemq5-version>5.18.6</activemq5-version>
       <apache.derby.version>10.15.2.0</apache.derby.version>
       <commons.beanutils.version>1.9.4</commons.beanutils.version>
       <commons.logging.version>1.3.4</commons.logging.version>
-      <commons.dbcp2.version>2.12.0</commons.dbcp2.version>
+      <commons.dbcp2.version>2.13.0</commons.dbcp2.version>
       <commons.pool2.version>2.12.0</commons.pool2.version>
       <commons.collections.version>3.2.2</commons.collections.version>
       <commons.text.version>1.12.0</commons.text.version>
@@ -107,16 +107,16 @@
       <guava.version>33.3.1-jre</guava.version>
       <hawtio.version>2.17.7</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
-      <jetty.version>10.0.24</jetty.version>
+      <jetty.version>12.0.15</jetty.version>
       <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
       <jgroups.version>5.3.13.Final</jgroups.version>
-      <errorprone.version>2.31.0</errorprone.version>
+      <errorprone.version>2.36.0</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <jib.maven.plugin.version>3.4.4</jib.maven.plugin.version>
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
       <maven.pmd.plugin.version>3.26.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
-      <checkstyle.version>10.20.1</checkstyle.version>
+      <checkstyle.version>10.20.2</checkstyle.version>
       <mockito.version>5.14.2</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.115.Final</netty.version>
@@ -141,7 +141,7 @@
       <hawtbuff.version>1.11</hawtbuff.version>
       <hawtdispatch.version>1.22</hawtdispatch.version>
       <picocli.version>4.7.6</picocli.version>
-      <jline.version>3.27.1</jline.version>
+      <jline.version>3.28.0</jline.version>
       <jakarta.activation-api.version>1.2.2</jakarta.activation-api.version>
       <jakarta.annotation-api.version>1.3.5</jakarta.annotation-api.version>
       <jakarta.ejb-api.version>3.2.6</jakarta.ejb-api.version>
@@ -162,7 +162,7 @@
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
       <version.org.jacoco>0.8.12</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.12</version.org.jacoco.plugin>
-      <version.micrometer>1.14.1</version.micrometer>
+      <version.micrometer>1.14.2</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
       <junit.version>4.13.2</junit.version>
       <junit5.version>5.11.3</junit5.version>
@@ -187,7 +187,7 @@
       <hadoop.minikdc.version>3.4.1</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
-      <owasp.version>11.1.0</owasp.version>
+      <owasp.version>11.1.1</owasp.version>
       <spring.version>5.3.39</spring.version>
 
       <jackson.version>2.18.2</jackson.version>
@@ -264,7 +264,7 @@
 
       <fast-tests>false</fast-tests>
 
-      <project.build.outputTimestamp>2024-10-16T15:10:37Z</project.build.outputTimestamp>
+      <project.build.outputTimestamp>2024-12-13T14:10:29Z</project.build.outputTimestamp>
    </properties>
 
    <scm>
@@ -304,40 +304,8 @@
 
    <profiles>
       <profile>
-         <id>jdk11to15-errorprone</id>
+         <id>errorprone</id>
          <activation>
-            <jdk>[11,16)</jdk>
-            <property>
-               <name>errorprone</name>
-            </property>
-         </activation>
-         <build>
-            <plugins>
-               <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                  <configuration>
-                     <compilerArgs>
-                        <arg>-Xdiags:verbose</arg>
-                        <arg>-XDcompilePolicy=simple</arg>
-                        <arg>-Xplugin:ErrorProne -Xep:ThreadLocalUsage:ERROR -Xep:MissingOverride:ERROR -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -Xep:BanJNDI:OFF -XepExcludedPaths:.*/generated-sources/.*</arg>
-                     </compilerArgs>
-                     <annotationProcessorPaths combine.children="append">
-                        <path>
-                           <groupId>com.google.errorprone</groupId>
-                           <artifactId>error_prone_core</artifactId>
-                           <version>${errorprone.version}</version>
-                        </path>
-                     </annotationProcessorPaths>
-                  </configuration>
-               </plugin>
-            </plugins>
-         </build>
-      </profile>
-      <profile>
-         <id>jdk16on-errorprone</id>
-         <activation>
-            <jdk>[16,)</jdk>
             <property>
                <name>errorprone</name>
             </property>
@@ -363,6 +331,7 @@
                         <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
                         <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
                         <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                        <arg>--should-stop=ifError=FLOW</arg>
                      </compilerArgs>
                      <annotationProcessorPaths combine.children="append">
                         <path>
@@ -454,8 +423,8 @@
                         <configuration>
                            <rules>
                               <requireJavaVersion>
-                                 <version>[11, 12)</version>
-                                 <message>JDK 11 is required when building the release</message>
+                                 <version>[17, 18)</version>
+                                 <message>JDK 17 is required when building the release</message>
                               </requireJavaVersion>
                            </rules>
                         </configuration>
@@ -1046,8 +1015,8 @@
                   <configuration>
                      <rules>
                         <requireJavaVersion>
-                           <version>[11,)</version>
-                           <message>You must use JDK 11+ when building</message>
+                           <version>[17,)</version>
+                           <message>You must use JDK 17+ when building</message>
                         </requireJavaVersion>
                      </rules>
                   </configuration>

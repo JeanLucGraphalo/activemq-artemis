@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-project</artifactId>
-      <version>2.39.0-SNAPSHOT</version>
+      <version>2.40.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>artemis-pom</artifactId>
@@ -520,6 +520,14 @@
          <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-bom</artifactId>
+            <version>${jetty.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+            <!-- License: (Joint): Apache 2.0 or EPL 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-bom</artifactId>
             <version>${jetty.version}</version>
             <type>pom</type>
             <scope>import</scope>
