@@ -45,6 +45,7 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
 import org.apache.activemq.artemis.core.protocol.stomp.Stomp;
+import org.apache.activemq.artemis.core.protocol.stomp.StompProtocolManagerFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
@@ -204,6 +205,8 @@ public abstract class StompTestBase extends ActiveMQTestBase {
       config.setPersistenceEnabled(true);
 
       ActiveMQServer activeMQServer = addServer(ActiveMQServers.newActiveMQServer(config, defUser, defPass));
+      // make sure Stomp is loaded
+      activeMQServer.addProtocolManagerFactory(new StompProtocolManagerFactory());
 
       if (isSecurityEnabled()) {
          ActiveMQJAASSecurityManager securityManager = (ActiveMQJAASSecurityManager) activeMQServer.getSecurityManager();
@@ -470,12 +473,22 @@ public abstract class StompTestBase extends ActiveMQTestBase {
    }
 
    public static ClientStompFrame subscribeTopic(StompClientConnection conn,
-         String subscriptionId,
-         String ack,
-         String durableId,
-         boolean receipt,
-         boolean noLocal) throws IOException, InterruptedException {
-      return subscribeTopic(conn, subscriptionId, ack, durableId, Stomp.Headers.Subscribe.DURABLE_SUBSCRIPTION_NAME, receipt, noLocal);
+                                                 String subscriptionId,
+                                                 String ack,
+                                                 String durableId,
+                                                 boolean receipt,
+                                                 boolean noLocal) throws IOException, InterruptedException {
+      return subscribeTopic(conn, subscriptionId, ack, durableId, Stomp.Headers.Subscribe.DURABLE_SUBSCRIPTION_NAME, receipt, noLocal, null);
+   }
+
+   public static ClientStompFrame subscribeTopic(StompClientConnection conn,
+                                                 String subscriptionId,
+                                                 String ack,
+                                                 String durableId,
+                                                 boolean receipt,
+                                                 boolean noLocal,
+                                                 String selector) throws IOException, InterruptedException {
+      return subscribeTopic(conn, subscriptionId, ack, durableId, Stomp.Headers.Subscribe.DURABLE_SUBSCRIPTION_NAME, receipt, noLocal, selector);
    }
 
    public static ClientStompFrame subscribeTopicLegacyActiveMQ(StompClientConnection conn,
@@ -484,16 +497,17 @@ public abstract class StompTestBase extends ActiveMQTestBase {
          String durableId,
          boolean receipt,
          boolean noLocal) throws IOException, InterruptedException {
-      return subscribeTopic(conn, subscriptionId, ack, durableId, Stomp.Headers.Subscribe.ACTIVEMQ_DURABLE_SUBSCRIPTION_NAME, receipt, noLocal);
+      return subscribeTopic(conn, subscriptionId, ack, durableId, Stomp.Headers.Subscribe.ACTIVEMQ_DURABLE_SUBSCRIPTION_NAME, receipt, noLocal, null);
    }
 
    public static ClientStompFrame subscribeTopic(StompClientConnection conn,
-                                          String subscriptionId,
-                                          String ack,
-                                          String durableId,
-                                          String durableIdHeader,
-                                          boolean receipt,
-                                          boolean noLocal) throws IOException, InterruptedException {
+                                                 String subscriptionId,
+                                                 String ack,
+                                                 String durableId,
+                                                 String durableIdHeader,
+                                                 boolean receipt,
+                                                 boolean noLocal,
+                                                 String selector) throws IOException, InterruptedException {
       ClientStompFrame frame = conn.createFrame(Stomp.Commands.SUBSCRIBE)
                                    .addHeader(Stomp.Headers.Subscribe.SUBSCRIPTION_TYPE, RoutingType.MULTICAST.toString())
                                    .addHeader(Stomp.Headers.Subscribe.DESTINATION, getTopicPrefix() + getTopicName());
@@ -512,6 +526,9 @@ public abstract class StompTestBase extends ActiveMQTestBase {
       }
       if (noLocal) {
          frame.addHeader(Stomp.Headers.Subscribe.NO_LOCAL, "true");
+      }
+      if (selector != null) {
+         frame.addHeader(Stomp.Headers.Subscribe.SELECTOR, selector);
       }
 
       frame = conn.sendFrame(frame);
