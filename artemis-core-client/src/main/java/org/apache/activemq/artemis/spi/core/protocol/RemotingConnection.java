@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.spi.core.protocol;
 
 import javax.security.auth.Subject;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -218,6 +219,16 @@ public interface RemotingConnection extends BufferHandler {
     * the possibly null subject associated with this connection
     */
    Subject getSubject();
+
+   /**
+    * sets the associated certificates for this connection
+    */
+   void setCertificates(X509Certificate[] certificates);
+
+   /**
+    * the possibly null certificates associated with this connection
+    */
+   X509Certificate[] getCertificates();
 
    /**
     * {@return the name of the protocol for this Remoting Connection}

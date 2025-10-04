@@ -51,8 +51,9 @@ public class CertificateUtil {
    public static X509Certificate[] getCertsFromConnection(RemotingConnection remotingConnection) {
       X509Certificate[] certificates = null;
       if (remotingConnection != null) {
-         Connection transportConnection = remotingConnection.getTransportConnection();
-         if (transportConnection instanceof NettyConnection nettyConnection) {
+         if (remotingConnection.getCertificates() != null) {
+            certificates = remotingConnection.getCertificates();
+         } else if (remotingConnection.getTransportConnection() instanceof NettyConnection nettyConnection) {
             certificates = getCertsFromChannel(nettyConnection.getChannel());
          }
       }
