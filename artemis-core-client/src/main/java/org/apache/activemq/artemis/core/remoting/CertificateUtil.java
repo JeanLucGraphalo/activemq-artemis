@@ -55,6 +55,7 @@ public class CertificateUtil {
             certificates = remotingConnection.getCertificates();
          } else if (remotingConnection.getTransportConnection() instanceof NettyConnection nettyConnection) {
             certificates = getCertsFromChannel(nettyConnection.getChannel());
+            remotingConnection.setCertificates(certificates);
          }
       }
       return certificates;

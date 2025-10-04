@@ -18,6 +18,7 @@
 package org.apache.activemq.artemis.core.management.impl;
 
 import javax.security.auth.Subject;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -178,6 +179,15 @@ public class ManagementRemotingConnection implements RemotingConnection {
    @Override
    public Subject getSubject() {
       return subject;
+   }
+
+   @Override
+   public void setCertificates(X509Certificate[] certificates) {
+   }
+
+   @Override
+   public X509Certificate[] getCertificates() {
+      return null;
    }
 
    @Override
