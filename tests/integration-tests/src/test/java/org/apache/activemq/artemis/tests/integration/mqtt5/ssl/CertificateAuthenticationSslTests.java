@@ -16,6 +16,9 @@
  */
 package org.apache.activemq.artemis.tests.integration.mqtt5.ssl;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
@@ -35,7 +38,10 @@ import org.apache.activemq.artemis.tests.integration.mqtt5.MQTT5TestSupport;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.Wait;
 import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -119,5 +125,76 @@ public class CertificateAuthenticationSslTests extends MQTT5TestSupport {
       producer.connect(getSslMqttConnectOptions());
       producer.publish(topic, body, 1, false);
       assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
+   }
+
+   // Send will message using mutual TLS with certificate-based authentication
+   @TestTemplate
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   void testSendWillMessage() throws Exception {
+      final String willSenderId = RandomUtil.randomUUIDString();
+      final String willTopic = RandomUtil.randomUUIDString();
+      final byte[] willBody = RandomUtil.randomBytes(32);
+
+      CountDownLatch latch = new CountDownLatch(1);
+      MqttClient willSender = createConnectedWillSender(willSenderId, willTopic, willBody);
+      MqttClient willConsumer = createConnectedWillConsumer(latch, willTopic, willBody);
+
+      var senderConnection = getServer().getRemotingService().getConnections().stream().filter(rc -> willSenderId.equals(rc.getClientID())).findFirst();
+      assertTrue(senderConnection.isPresent());
+
+      willSender.disconnectForcibly(0, 0, false);
+      assertTrue(latch.await(2, TimeUnit.SECONDS));
+      assertNotNull(senderConnection.get().getCertificates());
+      willConsumer.disconnect();
+   }
+
+   // Send will message using mutual TLS with certificate-based authentication fails if certificates are missing.
+   @TestTemplate
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   void testSendWillMessageFails() throws Exception {
+      final String willSenderId = RandomUtil.randomUUIDString();
+      final String willTopic = RandomUtil.randomUUIDString();
+      final byte[] willBody = RandomUtil.randomBytes(32);
+
+      CountDownLatch latch = new CountDownLatch(1);
+      MqttClient willSender = createConnectedWillSender(willSenderId, willTopic, willBody);
+      MqttClient willConsumer = createConnectedWillConsumer(latch, willTopic, willBody);
+
+      var senderConnection = getServer().getRemotingService().getConnections().stream().filter(rc -> willSenderId.equals(rc.getClientID())).findFirst();
+      assertTrue(senderConnection.isPresent());
+      senderConnection.get().setCertificates(null);
+
+      willSender.disconnectForcibly(0, 0, false);
+      assertFalse(latch.await(2, TimeUnit.SECONDS));
+      assertNull(senderConnection.get().getCertificates());
+      willConsumer.disconnect();
+   }
+
+   private MqttClient createConnectedWillSender(String clientId, String topic, byte[] body) throws MqttException {
+      MqttClient willSender = createPahoClient(protocol, clientId);
+      MqttConnectionOptions options = getSslMqttConnectOptions();
+      options.setSessionExpiryInterval(5L);
+      options.setWill(topic, new MqttMessage(body));
+      MqttProperties willMessageProperties = new MqttProperties();
+      willMessageProperties.setWillDelayInterval(1L);
+      options.setWillMessageProperties(willMessageProperties);
+      willSender.connect(options);
+      return willSender;
+   }
+
+   private MqttClient createConnectedWillConsumer(CountDownLatch latch,
+                                                  String topic,
+                                                  byte[] body) throws MqttException {
+      MqttClient willConsumer = createPahoClient(protocol, RandomUtil.randomUUIDString());
+      willConsumer.connect(getSslMqttConnectOptions());
+      willConsumer.setCallback(new DefaultMqttCallback() {
+         @Override
+         public void messageArrived(String topic, MqttMessage message) {
+            assertEqualsByteArrays(body, message.getPayload());
+            latch.countDown();
+         }
+      });
+      willConsumer.subscribe(topic, AT_LEAST_ONCE);
+      return willConsumer;
    }
 }
