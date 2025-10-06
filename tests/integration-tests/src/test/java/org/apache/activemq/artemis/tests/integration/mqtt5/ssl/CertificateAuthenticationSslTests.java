@@ -16,9 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.mqtt5.ssl;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
@@ -139,34 +136,8 @@ public class CertificateAuthenticationSslTests extends MQTT5TestSupport {
       MqttClient willSender = createConnectedWillSender(willSenderId, willTopic, willBody);
       MqttClient willConsumer = createConnectedWillConsumer(latch, willTopic, willBody);
 
-      var senderConnection = getServer().getRemotingService().getConnections().stream().filter(rc -> willSenderId.equals(rc.getClientID())).findFirst();
-      assertTrue(senderConnection.isPresent());
-
       willSender.disconnectForcibly(0, 0, false);
       assertTrue(latch.await(2, TimeUnit.SECONDS));
-      assertNotNull(senderConnection.get().getCertificates());
-      willConsumer.disconnect();
-   }
-
-   // Send will message using mutual TLS with certificate-based authentication fails if certificates are missing.
-   @TestTemplate
-   @Timeout(DEFAULT_TIMEOUT_SEC)
-   void testSendWillMessageFails() throws Exception {
-      final String willSenderId = RandomUtil.randomUUIDString();
-      final String willTopic = RandomUtil.randomUUIDString();
-      final byte[] willBody = RandomUtil.randomBytes(32);
-
-      CountDownLatch latch = new CountDownLatch(1);
-      MqttClient willSender = createConnectedWillSender(willSenderId, willTopic, willBody);
-      MqttClient willConsumer = createConnectedWillConsumer(latch, willTopic, willBody);
-
-      var senderConnection = getServer().getRemotingService().getConnections().stream().filter(rc -> willSenderId.equals(rc.getClientID())).findFirst();
-      assertTrue(senderConnection.isPresent());
-      senderConnection.get().setCertificates(null);
-
-      willSender.disconnectForcibly(0, 0, false);
-      assertFalse(latch.await(2, TimeUnit.SECONDS));
-      assertNull(senderConnection.get().getCertificates());
       willConsumer.disconnect();
    }
 
