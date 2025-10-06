@@ -132,4 +132,11 @@ public class RandomUtil {
       return RandomUtil.random.nextFloat();
    }
 
+   /**
+    * {@return A randomly generated {@link java.util.UUID} converted to a {@code String}}
+    */
+   public static String randomUUIDString() {
+      return java.util.UUID.randomUUID().toString();
+   }
+
 }

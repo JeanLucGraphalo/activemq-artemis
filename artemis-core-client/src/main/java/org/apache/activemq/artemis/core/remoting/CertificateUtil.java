@@ -51,9 +51,11 @@ public class CertificateUtil {
    public static X509Certificate[] getCertsFromConnection(RemotingConnection remotingConnection) {
       X509Certificate[] certificates = null;
       if (remotingConnection != null) {
-         Connection transportConnection = remotingConnection.getTransportConnection();
-         if (transportConnection instanceof NettyConnection) {
-            certificates = getCertsFromChannel(((NettyConnection) transportConnection).getChannel());
+         if (remotingConnection.getCertificates() != null) {
+            certificates = remotingConnection.getCertificates();
+         } else if (remotingConnection.getTransportConnection() instanceof NettyConnection nettyConnection) {
+            certificates = getCertsFromChannel(nettyConnection.getChannel());
+            remotingConnection.setCertificates(certificates);
          }
       }
       return certificates;
@@ -63,11 +65,9 @@ public class CertificateUtil {
       Principal result = null;
       if (remotingConnection != null) {
          Connection transportConnection = remotingConnection.getTransportConnection();
-         if (transportConnection instanceof NettyConnection) {
-            NettyConnection nettyConnection = (NettyConnection) transportConnection;
+         if (transportConnection instanceof NettyConnection nettyConnection) {
             ChannelHandler channelHandler = nettyConnection.getChannel().pipeline().get(SSL_HANDLER_NAME);
-            if (channelHandler != null && channelHandler instanceof SslHandler) {
-               SslHandler sslHandler = (SslHandler) channelHandler;
+            if (channelHandler != null && channelHandler instanceof SslHandler sslHandler) {
                try {
                   result = sslHandler.engine().getSession().getPeerPrincipal();
                } catch (SSLPeerUnverifiedException ignored) {
@@ -82,8 +82,7 @@ public class CertificateUtil {
    public static Principal getLocalPrincipalFromConnection(NettyConnection nettyConnection) {
       Principal result = null;
       ChannelHandler handler = nettyConnection.getChannel().pipeline().get(SSL_HANDLER_NAME);
-      if (handler instanceof SslHandler) {
-         SslHandler sslHandler = (SslHandler) handler;
+      if (handler instanceof SslHandler sslHandler) {
          result = sslHandler.engine().getSession().getLocalPrincipal();
       }
 
@@ -93,8 +92,7 @@ public class CertificateUtil {
    private static X509Certificate[] getCertsFromChannel(Channel channel) {
       Certificate[] plainCerts = null;
       ChannelHandler channelHandler = channel.pipeline().get("ssl");
-      if (channelHandler != null && channelHandler instanceof SslHandler) {
-         SslHandler sslHandler = (SslHandler) channelHandler;
+      if (channelHandler != null && channelHandler instanceof SslHandler sslHandler) {
          try {
             plainCerts = sslHandler.engine().getSession().getPeerCertificates();
          } catch (SSLPeerUnverifiedException e) {
@@ -111,8 +109,8 @@ public class CertificateUtil {
       if (plainCerts != null && plainCerts.length > 0) {
          x509Certs = new X509Certificate[plainCerts.length];
          for (int i = 0; i < plainCerts.length; i++) {
-            if (plainCerts[i] instanceof X509Certificate) {
-               x509Certs[i] = (X509Certificate) plainCerts[i];
+            if (plainCerts[i] instanceof X509Certificate x509Certificate) {
+               x509Certs[i] = x509Certificate;
             } else {
                try {
                   x509Certs[i] = (X509Certificate) CertificateFactory

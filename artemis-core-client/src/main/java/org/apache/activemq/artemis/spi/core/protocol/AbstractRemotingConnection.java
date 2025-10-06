@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.spi.core.protocol;
 
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,6 +53,7 @@ public abstract class AbstractRemotingConnection implements RemotingConnection {
    protected volatile boolean dataReceived;
    private String clientId;
    private Subject subject;
+   private X509Certificate[] certificates;
 
    public AbstractRemotingConnection(final Connection transportConnection, final Executor executor) {
       this.transportConnection = transportConnection;
@@ -224,9 +226,7 @@ public abstract class AbstractRemotingConnection implements RemotingConnection {
       return res;
    }
 
-   /*
-    * This can be called concurrently by more than one thread so needs to be locked
-    */
+   // This can be called concurrently by more than one thread so needs to be locked
    @Override
    public void fail(final ActiveMQException me) {
       fail(me, null);
@@ -282,6 +282,16 @@ public abstract class AbstractRemotingConnection implements RemotingConnection {
    @Override
    public Subject getSubject() {
       return subject;
+   }
+
+   @Override
+   public void setCertificates(X509Certificate[] certificates) {
+      this.certificates = certificates;
+   }
+
+   @Override
+   public X509Certificate[] getCertificates() {
+      return certificates;
    }
 
    @Override
